@@ -1,58 +1,72 @@
 # Vettic Sentry: Hardware-Native Green Box Implementation
 
-**Status:** Tier 1 Research Prototype
-**Protocol Alignment:** Green Box Protocol v1.1
+**Status:** Tier 1 Reference Architecture  
+**Protocol Alignment:** Green Box Protocol v1.1  
+**Governance Method:** Zero-Trust Physics (Patent-Backed)
 
 ## 📋 Executive Summary
-Vettic Sentry is a hardware-enforced containment architecture for autonomous agents. It addresses the "Execution Without Governance" risk by moving the "Watchdog" layer out of user-space software and into a dedicated physical microcontroller.
+Vettic Sentry is a hardware-enforced containment architecture for autonomous agents. It addresses the "Execution Without Governance" risk by decoupling **Intelligence** (The Agent) from **Authority** (The Hardware).
 
-In this architecture, the AI Agent has **zero** perception or execution authority until verified physical laws (thermal/humidity thresholds) authorize a "breach" state.
+In this architecture, the High-Compute Node (Jetson/GPU/Drone) is treated as a "Rogue Entity" by default. It possesses **zero** perception or execution authority until verified physical laws authorize a specific, temporary state of action.
+
+Unlike software watchdogs which can be bypassed by root access, Vettic leverages a dedicated **Hardware Authority Node** (ESP32/Embedded MCU) that physically controls the power and data rails of the Agent's sensors.
+
+## 🛡 Multi-Modal Physical Governance
+This implementation utilizes Vettic's patented "Physics-First" governance model. The Hardware Authority Node sanitizes reality by blocking sensory data until specific physical signatures are validated across multiple spectrums:
+
+* **Thermal Dynamics:** Heat signatures and gradient analysis.
+* **Electromagnetic (EMI/RF):** Wireless spectrum activity and anomaly detection.
+* **Acoustic:** Sound pressure levels and frequency signatures.
+* **Optical/Lidar:** Light intensity and visual presence.
+* **Environmental:** Humidity, pressure, and gas composition.
 
 ## 🏗 Architecture Mapping
 
-This project implements the **Green Box Protocol** using a physical "Air Gap" strategy:
+This project maps the **Green Box Protocol** to a hardware-native topology:
 
-### 1. The Box (Execution Isolation)
-* **Protocol Requirement:** "Dedicated hardware... No privileged containers."
-* **Vettic Implementation:**
-    * **Host:** NVIDIA Jetson Orin Nano (Physically air-gapped from corporate LAN).
-    * **State:** The "Visual Cortex" (Camera/Vision Pipeline) remains powered down by default.
+### 1. The Box (The Rogue Entity)
+* **Protocol Requirement:** "Execution Isolation."
+* **Vettic Implementation:** The **Subordinate Compute Node**.
+    * *Examples:* NVIDIA Jetson, Drone Flight Controller, Server GPU, Cell Tower Edge Node.
+    * *State:* Default is "Sensory Deprivation." The Compute Node may be powered, but its "eyes and ears" (sensors/cameras/microphones) are electrically severed or logically blocked by the Authority Node.
 
-### 2. The Watchdog (Automated Circuit Breaker)
-* **Protocol Requirement:** "A separate process monitors agent behavior... abnormal resource consumption triggers immediate termination."
-* **Vettic Implementation:**
-    * **Hardware:** ESP32 Microcontroller (The "Nervous System").
-    * **Mechanism:** The Watchdog is not a software daemon; it is a separate physical device. It maintains a hard "Kill Switch" on the Agent's sensory inputs via USB Serial control.
-    * **Logic:** The Agent cannot "see" or "think" until the Watchdog physically authorizes the data stream.
+### 2. The Watchdog (The Authority)
+* **Protocol Requirement:** "A separate process monitors behavior... triggers termination."
+* **Vettic Implementation:** The **Hardware Governance Node**.
+    * *Hardware:* Embedded MCU (ESP32/STM32/FPGA).
+    * *Mechanism:* Direct electrical control over the Rogue Entity's I/O rails. This node is immune to software prompt injection because it does not run LLMs; it runs deterministic physics logic.
+    * *Action:* It grants "Leases of Reality" only when physical laws are met.
 
 ### 3. The Airlock (Input Sanitization)
 * **Protocol Requirement:** "All inputs are scanned... Flagged inputs are quarantined."
-* **Vettic Implementation:**
-    * **Filter:** Physics.
-    * **Sanitization:** Instead of scanning prompt text, the system sanitizes *reality*. The Agent is only presented with visual data when specific physical thresholds (e.g., Humidity > 80% representing breath/presence) are met.
+* **Vettic Implementation:** **Sanitization of Reality**.
+    * Instead of filtering text *after* it enters the system, Vettic filters the *physics* before it becomes data.
+    * *Example:* An autonomous drone cannot activate its camera (The Agent) until the Governance Node detects the specific EMI/Thermal signature of a sanctioned target. To the Agent, the rest of the world simply does not exist.
 
-## ⚡ Deployment & Logic Flow
+## ⚡ Logic Flow (Reference Implementation)
+
+*Note: This repository contains a "Tier 1" reference build demonstrating the architecture using Environmental triggers.*
 
 **1. The "Cage" State (Idle)**
-The Jetson (Brain) is running a specialized listener (`vettic_main.py`). It has no access to the camera or the Gemini API. It is effectively "blind."
+The Subordinate Node (Jetson) is active but blind. It is running a listener loop waiting for hardware authorization. It cannot access its own peripherals.
 
 **2. The Trigger (Physical Breach)**
-The ESP32 (Watchdog) monitors environmental sensors (DHT11).
-* `IF Humidity > 80%`: The Watchdog asserts a **Hardware Interrupt**.
+The Governance Node (ESP32) monitors the physical environment. In this reference build, we utilize **Environmental/Biological Presence** (Humidity/Thermal variance) to represent a human operator entering a secure zone.
+* *Scale:* In production, this trigger could be an RF handshake, an acoustic pattern, or a specific thermal gradient.
 
 **3. The Execution (Agent Activation)**
-Only upon receiving the hardware key does the Jetson:
-1.  Wake the Visual Cortex (Warm-up routine for exposure stability).
-2.  Capture the scene.
-3.  Upload to **Gemini 2.0 Flash** for threat assessment.
-4.  Log the event to the local immutable ledger.
+Upon validating the physical signature, the Governance Node asserts a **Hardware Interrupt**.
+1.  **Authority Granted:** The Governance Node electrically/logically connects the Subordinate Node to its sensors.
+2.  **Observation:** The Agent (Generative Model) is briefly permitted to observe the scene.
+3.  **Assessment:** The Agent analyzes the threat/anomaly.
+4.  **Containment:** Once the assessment is logged to the immutable ledger, the Governance Node revokes sensory access, returning the Agent to the "Cage" state.
 
-## 📊 Telemetry
-* **Heartbeat:** Bi-directional Serial Handshake (`0x41` / 'A') ensures Watchdog and Box are synced.
-* **Logs:** All activation triggers ("Breaches") are permanently recorded with sensor context (Temp/Hum).
+## 📊 Telemetry & Immutability
+* **Hardware Heartbeat:** A deterministic serial handshake ensures the Rogue Entity has not effectively "gone silent" or crashed.
+* **Ledger:** All activations are logged with their causal physical data points (e.g., "Camera activated due to Thermal Signature X at Time Y").
 
 ## 🛡 Security Note
-This is a **Tier 1 (Research)** deployment intended for internal validation. It is designed to demonstrate that **Physical Governance** can be more reliable than Software Governance for high-risk autonomous agents.
+This repository demonstrates the **Vettic Hardware Governance** methodology. It is intended to prove that High-Risk Autonomous Agents can be safely deployed if their perception of reality is governed by deterministic hardware rather than probabilistic software.
 
 ---
 *Based on the Green Box Protocol v1.1 by Michael Lee / asASource.*
